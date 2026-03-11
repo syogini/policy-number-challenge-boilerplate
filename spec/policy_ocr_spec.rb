@@ -10,7 +10,7 @@ describe PolicyOcr do
   end
 
   describe "PolicyOcr::PolicyScanner" do
-    sample_path = File.expand_path("./fixtures/sample.txt", __dir__)
+    sample_path = File.expand_path("./spec_input/sample.txt", __dir__)
     scanner = PolicyOcr::PolicyScanner.for(sample_path)
     describe "validate_policy_number " do
       it " validates checksum for policy no 111111111 as false" do
@@ -24,7 +24,7 @@ describe PolicyOcr do
 
     describe "process" do
       it "processes sample file without error" do
-        # Assume sample.txt exists in spec/fixtures/sample.txt with correct formatted lines
+        # Assume sample.txt exists in spec/spec_input/sample.txt with correct formatted lines
         expect(File.exist?(sample_path)).to be true
 
         # scan may return the result of read_lines (could be nil if not implemented to return), but here check for no error and call
