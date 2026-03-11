@@ -10,7 +10,7 @@ describe PolicyOcr do
   end
 
   describe "PolicyOcr::PolicyScanner" do
-    sample_path = File.expand_path("./fixtures/sample.txt", __dir__)
+    sample_path = File.expand_path("./spec_input/sample.txt", __dir__)
     scanner = PolicyOcr::PolicyScanner.for(sample_path)
     describe "validate_policy_number " do
       it " validates checksum for policy no 111111111 as false" do
@@ -24,7 +24,7 @@ describe PolicyOcr do
 
     describe "process" do
       it "processes sample file without error" do
-        # Assume sample.txt exists in spec/fixtures/sample.txt with correct formatted lines
+        # Assume sample.txt exists in spec/spec_input/sample.txt with correct formatted lines
         expect(File.exist?(sample_path)).to be true
 
         # scan may return the result of read_lines (could be nil if not implemented to return), but here check for no error and call
@@ -66,17 +66,10 @@ describe PolicyOcr do
 
     describe "print_validated_numbers" do
       before do
-        scanner.policy_numbers = []
+        Dir.glob(File.join(File.dirname(sample_path), "output_*.txt")).each { |f| File.delete(f) }
       end
       it "writes validated numbers to timestamped output file" do
-       
-        scanner.policy_numbers << "000000000"
-        # Ensure file is not in output dir initially
-        timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-        output_prefix = File.join(File.dirname(sample_path), "output_#{timestamp.split(//).first(12).join}")
-        # Remove any prior output file that matches (very unlikely, but for safety)
-        Dir.glob(File.join(File.dirname(sample_path), "output_*.txt")).each { |f| File.delete(f) }
-
+        allow(scanner).to receive(:policy_numbers).and_return(["000000000"])
         # Call the print_validated_numbers method
         scanner.print_validated_numbers
 
@@ -96,9 +89,9 @@ describe PolicyOcr do
       end
 
       it "marks ILL if scanned policy number contains '?'" do
-        scanner.policy_numbers << "000??1000"
+        allow(scanner).to receive(:policy_numbers).and_return(["000??1000"])
         scanner.print_validated_numbers
-        output_file = Dir.glob(File.join(File.dirname(sample_path), "output_*.txt")).first
+        output_file = Dir.glob(File.join(File.dirname(sample_path), "output_*.txt")).max_by { |f| File.mtime(f) }
         expect(output_file).not_to be_nil
         output_lines = File.readlines(output_file).map(&:chomp)
         # '?' is present; expect 'ILL'
@@ -106,9 +99,9 @@ describe PolicyOcr do
       end
 
       it "marks ERR if scanned policy number fails checksum" do
-        scanner.policy_numbers << "111111111"
+        allow(scanner).to receive(:policy_numbers).and_return(["111111111"])
         scanner.print_validated_numbers
-        output_file = Dir.glob(File.join(File.dirname(sample_path), "output_*.txt")).first
+        output_file = Dir.glob(File.join(File.dirname(sample_path), "output_*.txt")).max_by { |f| File.mtime(f) }
         expect(output_file).not_to be_nil
         output_lines = File.readlines(output_file).map(&:chomp)
         # If checksum fails (as for 111111111), expect 'ERR'
@@ -164,11 +157,10 @@ describe PolicyOcr do
 
   describe 'PolicyNumberGenerator.read_characters' do
     generator = PolicyOcr::PolicyNumberGenerator.allocate
-
     before do
-      # Prepare @converted_line_list as expected in the instance
-      generator.converted_line_list =  Array.new(3) { Array.new(9) { [] } }
-    end 
+      generator = PolicyOcr::PolicyNumberGenerator.new([])
+    end
+    
     it "parses a single line into correct encoded values for the top of the digit" do
       # Simulates a single line input 
       line = "    _  _ "
@@ -194,7 +186,7 @@ describe PolicyOcr do
       generator.read_characters(line_top, 0)
       generator.read_characters(line_middle, 1)
       generator.read_characters(line_bottom, 2)
-
+      
       conv = generator.converted_line_list
       expect(conv[0][0]).to eq([0,0,0])
       expect(conv[1][0]).to eq([0,0,1])

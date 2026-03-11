@@ -8,8 +8,8 @@ module PolicyOcr
     # validates the policy numbers,
     # Writes the policy number and error message to a timestamped output file.
     class PolicyScanner
-        attr_accessor :policy_numbers
-        attr_accessor :line_list
+        attr_reader :policy_numbers
+        attr_reader :line_list
 
         def initialize(file_path)
           @path = File.expand_path(file_path, __dir__)
@@ -55,7 +55,7 @@ module PolicyOcr
             timestamp = Time.now.strftime("%Y%m%d%H%M%S")
             output_path = File.join(File.dirname(@path), "output_#{timestamp}.txt")
             File.open(output_path, "w") do |file|
-                @policy_numbers.each do |policy_number|
+                policy_numbers.each do |policy_number|
                     error_message = ""
                     if (policy_number.include?("?"))
                         error_message = "ILL"

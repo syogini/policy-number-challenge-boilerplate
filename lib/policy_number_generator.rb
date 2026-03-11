@@ -11,7 +11,7 @@ module PolicyOcr
   # If an unrecognized pattern is encountered, it substitutes '?' for that digit.
 class PolicyNumberGenerator
 
-    attr_accessor :converted_line_list
+    attr_reader :converted_line_list
     def initialize(lines)
         @converted_line_list = Array.new(3) { Array.new{9} }
         9.times do
