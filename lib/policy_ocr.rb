@@ -12,14 +12,24 @@ module PolicyOcr
         attr_reader :line_list
 
         def initialize(file_path)
+          # Sets the instance variable @path to the absolute path of the file,
+          # resolving the path relative to the directory this file is in.
           @path = File.expand_path(file_path, __dir__)
+          if !File.exist?(@path)
+            raise "File not found: #{@path}"
+          end
           @reader = SimpleLineFileReader.new(@path)
           @line_list = Array.new { Array.new(3) }
           @policy_numbers = []
         end
 
         def self.for(file_path)
-            PolicyScanner.new(file_path)
+            begin
+                PolicyScanner.new(file_path)
+            rescue => e
+                puts "Error initializing PolicyScanner: #{e.message}"
+                nil
+            end
         end
 
         def process
@@ -86,11 +96,15 @@ module PolicyOcr
     class SimpleLineFileReader
         def initialize(path)
           @file_reader_path = path
+
         end
       
         # Every line has 27 characters and there are max 480 lines per file
         # reading all lines will not exceed the buffer size.
         def lines
+          if !File.exist?(@file_reader_path)
+            raise "File not found: #{@file_reader_path}"
+          end
           @lines ||= File.readlines(@file_reader_path, chomp: true)
         end
     end
